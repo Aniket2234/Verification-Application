@@ -30,6 +30,15 @@ exports.handler = async (event, context) => {
     };
   }
 
+  // Check if MongoDB URI is available
+  if (!process.env.MONGODB_URI) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Database configuration missing' }),
+    };
+  }
+
   try {
     const db = await connectToDatabase();
     const candidatesCollection = db.collection('candidates');
