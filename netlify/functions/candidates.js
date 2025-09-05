@@ -9,7 +9,7 @@ async function connectToDatabase() {
 
   const client = new MongoClient(process.env.MONGODB_URI);
   await client.connect();
-  cachedDb = client.db('training-portal');
+  cachedDb = client.db('training_portal');
   return cachedDb;
 }
 
@@ -36,9 +36,10 @@ exports.handler = async (event, context) => {
     
     const method = event.httpMethod;
     const body = event.body ? JSON.parse(event.body) : null;
+    const path = event.path.replace('/.netlify/functions/candidates', '') || '';
 
     // GET /api/candidates - Get all candidates
-    if (method === 'GET') {
+    if (method === 'GET' && path === '') {
       const candidates = await candidatesCollection.find({}).toArray();
       return {
         statusCode: 200,
@@ -67,8 +68,8 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // POST /api/candidates/search - Search candidates
-    if (method === 'POST' && path === '/search') {
+    // POST /api/candidates/search - Search candidates  
+    if (method === 'POST') {
       const { aadhar, mobile } = body;
       
       let query = {};
@@ -100,8 +101,9 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // POST /api/candidates - Create new candidate
-    if (method === 'POST' && path === '') {
+    // This logic is handled by the search function above
+    // POST /api/candidates - Create new candidate  
+    if (false && method === 'POST' && path === '') {
       // Check for duplicates
       const existingByAadhar = await candidatesCollection.findOne({ aadhar: body.aadhar });
       const existingByMobile = await candidatesCollection.findOne({ mobile: body.mobile });

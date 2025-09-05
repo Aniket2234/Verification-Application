@@ -1,5 +1,17 @@
-// OTP storage (in production, use a database or Redis)
-let otpStore = new Map();
+const { MongoClient } = require('mongodb');
+
+let cachedDb = null;
+
+async function connectToDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  const client = new MongoClient(process.env.MONGODB_URI);
+  await client.connect();
+  cachedDb = client.db('training_portal');
+  return cachedDb;
+}
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -21,6 +33,9 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    const db = await connectToDatabase();
+    const otpCollection = db.collection('otps');
+    
     const { phoneNumber } = JSON.parse(event.body);
     
     if (!phoneNumber || phoneNumber.length !== 10) {
@@ -34,17 +49,28 @@ exports.handler = async (event, context) => {
     // Generate 4-digit OTP
     const otp = Math.floor(1000 + Math.random() * 9000).toString();
     
-    // Store OTP with timestamp and attempts
-    otpStore.set(phoneNumber, { 
-      otp, 
-      timestamp: Date.now(), 
-      attempts: 0 
-    });
-
-    // Auto cleanup after 5 minutes
-    setTimeout(() => {
-      otpStore.delete(phoneNumber);
-    }, 5 * 60 * 1000);
+    // Store OTP in MongoDB with expiry
+    const otpData = {
+      phoneNumber,
+      otp,
+      timestamp: Date.now(),
+      attempts: 0,
+      expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes from now
+    };
+    
+    // Upsert OTP data (replace if exists)
+    await otpCollection.replaceOne(
+      { phoneNumber },
+      otpData,
+      { upsert: true }
+    );
+    
+    // Create TTL index for automatic cleanup (run once)
+    try {
+      await otpCollection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+    } catch (indexError) {
+      // Index might already exist, ignore
+    }
 
     let smsResult = null;
     

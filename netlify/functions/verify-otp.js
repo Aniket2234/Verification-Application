@@ -1,5 +1,17 @@
-// OTP storage (shared with send-otp function)
-let otpStore = new Map();
+const { MongoClient } = require('mongodb');
+
+let cachedDb = null;
+
+async function connectToDatabase() {
+  if (cachedDb) {
+    return cachedDb;
+  }
+
+  const client = new MongoClient(process.env.MONGODB_URI);
+  await client.connect();
+  cachedDb = client.db('training_portal');
+  return cachedDb;
+}
 
 exports.handler = async (event, context) => {
   const headers = {
@@ -21,6 +33,9 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    const db = await connectToDatabase();
+    const otpCollection = db.collection('otps');
+    
     const { phoneNumber, otp } = JSON.parse(event.body);
     
     if (!phoneNumber || !otp) {
@@ -31,7 +46,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    const storedData = otpStore.get(phoneNumber);
+    const storedData = await otpCollection.findOne({ phoneNumber });
     
     if (!storedData) {
       return {
@@ -44,7 +59,7 @@ exports.handler = async (event, context) => {
     // Check if OTP is expired (5 minutes)
     const isExpired = Date.now() - storedData.timestamp > 5 * 60 * 1000;
     if (isExpired) {
-      otpStore.delete(phoneNumber);
+      await otpCollection.deleteOne({ phoneNumber });
       return {
         statusCode: 400,
         headers,
@@ -54,7 +69,7 @@ exports.handler = async (event, context) => {
 
     // Check attempts
     if (storedData.attempts >= 3) {
-      otpStore.delete(phoneNumber);
+      await otpCollection.deleteOne({ phoneNumber });
       return {
         statusCode: 400,
         headers,
@@ -64,21 +79,23 @@ exports.handler = async (event, context) => {
 
     // Verify OTP
     if (storedData.otp === otp) {
-      otpStore.delete(phoneNumber);
+      await otpCollection.deleteOne({ phoneNumber });
       return {
         statusCode: 200,
         headers,
         body: JSON.stringify({ success: true, message: 'OTP verified successfully' }),
       };
     } else {
-      storedData.attempts += 1;
-      otpStore.set(phoneNumber, storedData);
+      await otpCollection.updateOne(
+        { phoneNumber },
+        { $inc: { attempts: 1 } }
+      );
       return {
         statusCode: 400,
         headers,
         body: JSON.stringify({ 
           error: 'Invalid OTP', 
-          attemptsLeft: 3 - storedData.attempts 
+          attemptsLeft: 3 - (storedData.attempts + 1)
         }),
       };
     }
