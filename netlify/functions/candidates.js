@@ -1,12 +1,14 @@
 const { MongoClient } = require('mongodb');
 
-// For Netlify Functions, we need to handle the connection properly
-
 let cachedDb = null;
 
 async function connectToDatabase() {
   if (cachedDb) {
     return cachedDb;
+  }
+
+  if (!process.env.MONGODB_URI) {
+    throw new Error('MONGODB_URI environment variable is not set');
   }
 
   const client = new MongoClient(process.env.MONGODB_URI);

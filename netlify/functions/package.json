@@ -2,7 +2,6 @@
   "name": "netlify-functions",
   "version": "1.0.0",
   "description": "Netlify Functions for Training Portal",
-  "main": "index.js",
   "dependencies": {
     "mongodb": "^6.19.0",
     "twilio": "^5.9.0"
