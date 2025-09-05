@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: training-portal-api
+    env: node
+    buildCommand: npm run build:server
+    startCommand: npm run start:server
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
