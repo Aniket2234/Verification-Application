@@ -1,43 +1,4 @@
-const { drizzle } = require('drizzle-orm/neon-http');
-const { neon } = require('@neondatabase/serverless');
-const { eq } = require('drizzle-orm');
-const { pgTable, text, serial, boolean, timestamp } = require('drizzle-orm/pg-core');
-
-// Define schema for Netlify functions
-const candidates = pgTable("candidates", {
-  id: serial("id").primaryKey(),
-  candidateId: text("candidate_id").notNull().unique(),
-  srNo: text("sr_no"),
-  location: text("location").notNull(),
-  name: text("name").notNull(),
-  aadhar: text("aadhar").notNull().unique(),
-  dob: text("dob").notNull(),
-  gender: text("gender").notNull(),
-  religion: text("religion"),
-  vulnerability: text("vulnerability"),
-  annualIncome: text("annual_income"),
-  educationalQualification: text("educational_qualification"),
-  mobile: text("mobile").notNull(),
-  assessmentDate: text("assessment_date"),
-  dlNo: text("dl_no"),
-  dlType: text("dl_type"),
-  licenseExpiryDate: text("license_expiry_date"),
-  dependentFamilyMembers: text("dependent_family_members"),
-  ownerDriver: text("owner_driver"),
-  abhaNo: text("abha_no"),
-  jobRole: text("job_role"),
-  jobCode: text("job_code"),
-  emailAddress: text("email_address"),
-  youTube: text("you_tube"),
-  facebook: text("facebook"),
-  instagram: text("instagram"),
-  ekycStatus: text("ekyc_status"),
-  personalEmailAddress: text("personal_email_address"),
-  trained: boolean("trained").notNull().default(false),
-  status: text("status").notNull().default('Not Enrolled'),
-  profileImage: text("profile_image"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+const { MongoClient } = require('mongodb');
 
 let cachedDb = null;
 
@@ -46,8 +7,9 @@ async function connectToDatabase() {
     return cachedDb;
   }
 
-  const sql = neon(process.env.DATABASE_URL);
-  cachedDb = drizzle(sql, { schema: { candidates } });
+  const client = new MongoClient(process.env.MONGODB_URI);
+  await client.connect();
+  cachedDb = client.db('training-portal');
   return cachedDb;
 }
 
@@ -70,25 +32,25 @@ exports.handler = async (event, context) => {
 
   try {
     const db = await connectToDatabase();
+    const candidatesCollection = db.collection('candidates');
     
     const method = event.httpMethod;
     const body = event.body ? JSON.parse(event.body) : null;
 
     // GET /api/candidates - Get all candidates
     if (method === 'GET') {
-      const candidatesData = await db.select().from(candidates);
+      const candidates = await candidatesCollection.find({}).toArray();
       return {
         statusCode: 200,
         headers,
-        body: JSON.stringify(candidatesData),
+        body: JSON.stringify(candidates),
       };
     }
 
     // GET /api/candidates/:id - Get candidate by ID
     if (method === 'GET' && path.match(/^\/\d+$/)) {
       const id = parseInt(path.slice(1));
-      const result = await db.select().from(candidates).where(eq(candidates.id, id));
-      const candidate = result[0] || null;
+      const candidate = await candidatesCollection.findOne({ id });
       
       if (!candidate) {
         return {
@@ -121,13 +83,7 @@ exports.handler = async (event, context) => {
         };
       }
       
-      let result;
-      if (aadhar) {
-        result = await db.select().from(candidates).where(eq(candidates.aadhar, aadhar));
-      } else if (mobile) {
-        result = await db.select().from(candidates).where(eq(candidates.mobile, mobile));
-      }
-      const candidate = result[0] || null;
+      const candidate = await candidatesCollection.findOne(query);
       
       if (!candidate) {
         return {
@@ -147,10 +103,8 @@ exports.handler = async (event, context) => {
     // POST /api/candidates - Create new candidate
     if (method === 'POST' && path === '') {
       // Check for duplicates
-      const existingByAadharResult = await db.select().from(candidates).where(eq(candidates.aadhar, body.aadhar));
-      const existingByMobileResult = await db.select().from(candidates).where(eq(candidates.mobile, body.mobile));
-      const existingByAadhar = existingByAadharResult[0] || null;
-      const existingByMobile = existingByMobileResult[0] || null;
+      const existingByAadhar = await candidatesCollection.findOne({ aadhar: body.aadhar });
+      const existingByMobile = await candidatesCollection.findOne({ mobile: body.mobile });
       
       if (existingByAadhar) {
         return {
@@ -169,17 +123,18 @@ exports.handler = async (event, context) => {
       }
 
       // Generate ID
-      const allCandidates = await db.select().from(candidates);
-      const count = allCandidates.length;
+      const count = await candidatesCollection.countDocuments();
       const candidateId = `TRN${String(count + 1).padStart(3, '0')}`;
       
-      const candidateData = {
+      const candidate = {
         ...body,
+        id: count + 1,
         candidateId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       };
       
-      const result = await db.insert(candidates).values(candidateData).returning();
-      const candidate = result[0];
+      await candidatesCollection.insertOne(candidate);
       
       return {
         statusCode: 201,
@@ -192,12 +147,17 @@ exports.handler = async (event, context) => {
     if (method === 'PUT' && path.match(/^\/\d+$/)) {
       const id = parseInt(path.slice(1));
       
-      const result = await db.update(candidates)
-        .set(body)
-        .where(eq(candidates.id, id))
-        .returning();
+      const result = await candidatesCollection.updateOne(
+        { id },
+        { 
+          $set: { 
+            ...body, 
+            updatedAt: new Date() 
+          } 
+        }
+      );
       
-      if (result.length === 0) {
+      if (result.matchedCount === 0) {
         return {
           statusCode: 404,
           headers,
@@ -205,7 +165,7 @@ exports.handler = async (event, context) => {
         };
       }
       
-      const updatedCandidate = result[0];
+      const updatedCandidate = await candidatesCollection.findOne({ id });
       
       return {
         statusCode: 200,
@@ -218,9 +178,9 @@ exports.handler = async (event, context) => {
     if (method === 'DELETE' && path.match(/^\/\d+$/)) {
       const id = parseInt(path.slice(1));
       
-      const result = await db.delete(candidates).where(eq(candidates.id, id)).returning();
+      const result = await candidatesCollection.deleteOne({ id });
       
-      if (result.length === 0) {
+      if (result.deletedCount === 0) {
         return {
           statusCode: 404,
           headers,
@@ -249,16 +209,14 @@ exports.handler = async (event, context) => {
 
       const results = [];
       const errors = [];
-      const allExisting = await db.select().from(candidates);
-      let nextCandidateNumber = allExisting.length + 1;
+      const existingCount = await candidatesCollection.countDocuments();
+      let nextId = existingCount + 1;
 
       for (const candidateData of candidates) {
         try {
           // Check duplicates
-          const existingByAadharResult = await db.select().from(candidates).where(eq(candidates.aadhar, candidateData.aadhar));
-          const existingByMobileResult = await db.select().from(candidates).where(eq(candidates.mobile, candidateData.mobile));
-          const existingByAadhar = existingByAadharResult[0] || null;
-          const existingByMobile = existingByMobileResult[0] || null;
+          const existingByAadhar = await candidatesCollection.findOne({ aadhar: candidateData.aadhar });
+          const existingByMobile = await candidatesCollection.findOne({ mobile: candidateData.mobile });
           
           if (existingByAadhar || existingByMobile) {
             errors.push({
@@ -269,15 +227,17 @@ exports.handler = async (event, context) => {
             continue;
           }
 
-          const candidateId = `TRN${String(nextCandidateNumber).padStart(3, '0')}`;
+          const candidateId = `TRN${String(nextId).padStart(3, '0')}`;
           
-          const newCandidateData = {
+          const candidate = {
             ...candidateData,
+            id: nextId,
             candidateId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
           };
           
-          const result = await db.insert(candidates).values(newCandidateData).returning();
-          const candidate = result[0];
+          await candidatesCollection.insertOne(candidate);
           
           results.push({
             name: candidate.name,
@@ -285,7 +245,7 @@ exports.handler = async (event, context) => {
             status: 'success'
           });
           
-          nextCandidateNumber++;
+          nextId++;
         } catch (error) {
           errors.push({
             name: candidateData.name || 'Unknown',
