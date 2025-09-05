@@ -1,25 +1,30 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { PostgreSQLStorage } from "./pgStorage";
+import { MongoStorage } from "./mongoStorage";
+import { database } from "./database";
 import { insertCandidateSchema, type Candidate } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   let activeStorage;
+  let mongoStorage: MongoStorage | null = null;
 
-  // Initialize PostgreSQL connection
+  // Try to initialize MongoDB connection
   try {
-    if (process.env.DATABASE_URL) {
-      activeStorage = new PostgreSQLStorage();
-      console.log('✓ PostgreSQL connected successfully');
+    if (process.env.MONGODB_URI) {
+      await database.connect();
+      await database.ensureIndexes();
+      mongoStorage = new MongoStorage();
+      activeStorage = mongoStorage;
+      console.log('✓ MongoDB connected successfully');
       console.log('✓ Database ready with duplicate prevention enabled');
     } else {
-      console.log('⚠️ DATABASE_URL not provided, using in-memory storage');
+      console.log('⚠️ MONGODB_URI not provided, using in-memory storage');
       activeStorage = storage;
     }
   } catch (error) {
-    console.error('❌ Failed to connect to PostgreSQL:', error);
+    console.error('❌ Failed to connect to MongoDB:', error);
     console.log('🔄 Falling back to in-memory storage');
     activeStorage = storage;
   }
