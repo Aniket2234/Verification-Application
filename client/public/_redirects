@@ -1,6 +1,7 @@
 # Netlify Functions redirects
 /api/candidates/search  /.netlify/functions/candidates-search  200
 /api/candidates         /.netlify/functions/candidates         200
+/api/candidates/*       /.netlify/functions/create-candidate   200
 /api/send-otp           /.netlify/functions/send-otp           200  
 /api/verify-otp         /.netlify/functions/verify-otp         200
 

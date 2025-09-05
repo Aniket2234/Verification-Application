@@ -17,6 +17,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/candidates/*"
+  to = "/.netlify/functions/create-candidate"
+  status = 200
+
+[[redirects]]
   from = "/api/send-otp"
   to = "/.netlify/functions/send-otp"
   status = 200

@@ -68,82 +68,8 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // POST /api/candidates/search - Search candidates  
-    if (method === 'POST') {
-      const { aadhar, mobile } = body;
-      
-      let query = {};
-      if (aadhar) query.aadhar = aadhar;
-      if (mobile) query.mobile = mobile;
-      
-      if (Object.keys(query).length === 0) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Either aadhar or mobile is required' }),
-        };
-      }
-      
-      const candidate = await candidatesCollection.findOne(query);
-      
-      if (!candidate) {
-        return {
-          statusCode: 404,
-          headers,
-          body: JSON.stringify({ error: 'Candidate not found' }),
-        };
-      }
-      
-      return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify(candidate),
-      };
-    }
-
-    // This logic is handled by the search function above
-    // POST /api/candidates - Create new candidate  
-    if (false && method === 'POST' && path === '') {
-      // Check for duplicates
-      const existingByAadhar = await candidatesCollection.findOne({ aadhar: body.aadhar });
-      const existingByMobile = await candidatesCollection.findOne({ mobile: body.mobile });
-      
-      if (existingByAadhar) {
-        return {
-          statusCode: 409,
-          headers,
-          body: JSON.stringify({ error: 'Candidate with this Aadhar already exists' }),
-        };
-      }
-      
-      if (existingByMobile) {
-        return {
-          statusCode: 409,
-          headers,
-          body: JSON.stringify({ error: 'Candidate with this mobile number already exists' }),
-        };
-      }
-
-      // Generate ID
-      const count = await candidatesCollection.countDocuments();
-      const candidateId = `TRN${String(count + 1).padStart(3, '0')}`;
-      
-      const candidate = {
-        ...body,
-        id: count + 1,
-        candidateId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      
-      await candidatesCollection.insertOne(candidate);
-      
-      return {
-        statusCode: 201,
-        headers,
-        body: JSON.stringify(candidate),
-      };
-    }
+    // Only handle GET requests for listing all candidates
+    // POST requests for search and create are handled by separate functions
 
     // PUT /api/candidates/:id - Update candidate
     if (method === 'PUT' && path.match(/^\/\d+$/)) {
