@@ -1,6 +1,6 @@
 [build]
   publish = "dist/public"
-  command = "npm run build:client"
+  command = "vite build"
 
 [build.environment]
   NODE_VERSION = "20"
