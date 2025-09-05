@@ -1,5 +1,7 @@
 const { MongoClient } = require('mongodb');
 
+// For Netlify Functions, we need to handle the connection properly
+
 let cachedDb = null;
 
 async function connectToDatabase() {
@@ -46,6 +48,8 @@ exports.handler = async (event, context) => {
     const method = event.httpMethod;
     const body = event.body ? JSON.parse(event.body) : null;
     const path = event.path.replace('/.netlify/functions/candidates', '') || '';
+    
+    console.log('Function called with path:', path, 'method:', method);
 
     // GET /api/candidates - Get all candidates
     if (method === 'GET' && path === '') {

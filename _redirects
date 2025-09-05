@@ -1,4 +1,5 @@
 # Netlify Functions redirects
+/api/hello                  /.netlify/functions/hello              200
 /api/test                   /.netlify/functions/test               200
 /api/candidates/search      /.netlify/functions/candidates-search  200
 /api/candidates/bulk-import /.netlify/functions/candidates         200

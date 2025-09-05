@@ -1,6 +1,6 @@
 [build]
   publish = "dist/public"
-  command = "npm install && cd netlify/functions && npm install && cd ../.. && vite build"
+  command = "npm install && cd netlify/functions && npm install && cd ../.. && vite build && cp _redirects dist/public/_redirects"
   functions = "netlify/functions"
 
 [build.environment]
