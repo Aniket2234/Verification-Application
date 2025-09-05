@@ -7,8 +7,13 @@
   NODE_VERSION = "20"
 
 [[redirects]]
-  from = "/api/candidates/*"
-  to = "/.netlify/functions/candidates/:splat"
+  from = "/api/candidates/search"
+  to = "/.netlify/functions/candidates-search"
+  status = 200
+
+[[redirects]]
+  from = "/api/candidates"
+  to = "/.netlify/functions/candidates"
   status = 200
 
 [[redirects]]

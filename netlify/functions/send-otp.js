@@ -1,7 +1,7 @@
 // OTP storage (in production, use a database or Redis)
 let otpStore = new Map();
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -51,9 +51,9 @@ export const handler = async (event, context) => {
     // Try Twilio if credentials available
     if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_PHONE_NUMBER) {
       try {
-        // Import Twilio dynamically
-        const twilio = await import('twilio');
-        const client = twilio.default(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+        // Import Twilio
+        const twilio = require('twilio');
+        const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
         
         await client.messages.create({
           body: `Your Training Portal verification code is: ${otp}. Valid for 5 minutes.`,

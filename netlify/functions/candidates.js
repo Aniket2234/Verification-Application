@@ -1,4 +1,4 @@
-import { MongoClient } from 'mongodb';
+const { MongoClient } = require('mongodb');
 
 let cachedDb = null;
 
@@ -13,7 +13,7 @@ async function connectToDatabase() {
   return cachedDb;
 }
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   // Set CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
@@ -34,12 +34,11 @@ export const handler = async (event, context) => {
     const db = await connectToDatabase();
     const candidatesCollection = db.collection('candidates');
     
-    const path = event.path.replace('/.netlify/functions/candidates', '');
     const method = event.httpMethod;
     const body = event.body ? JSON.parse(event.body) : null;
 
     // GET /api/candidates - Get all candidates
-    if (method === 'GET' && path === '') {
+    if (method === 'GET') {
       const candidates = await candidatesCollection.find({}).toArray();
       return {
         statusCode: 200,

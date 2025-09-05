@@ -1,7 +1,8 @@
 # Netlify Functions redirects
-/api/candidates/*  /.netlify/functions/candidates/:splat  200
-/api/send-otp      /.netlify/functions/send-otp          200  
-/api/verify-otp    /.netlify/functions/verify-otp        200
+/api/candidates/search  /.netlify/functions/candidates-search  200
+/api/candidates         /.netlify/functions/candidates         200
+/api/send-otp           /.netlify/functions/send-otp           200  
+/api/verify-otp         /.netlify/functions/verify-otp         200
 
 # SPA fallback for client-side routing
 /*  /index.html  200

@@ -1,7 +1,7 @@
 // OTP storage (shared with send-otp function)
 let otpStore = new Map();
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
