@@ -1,2 +1,6 @@
-# SPA fallback for client-side routing - API calls should use environment variable
+# API calls should be handled by your backend (set VITE_API_URL environment variable)
+# If no VITE_API_URL is set, these will return 404
+/api/*  /404.html  404
+
+# SPA fallback for client-side routing
 /*  /index.html  200

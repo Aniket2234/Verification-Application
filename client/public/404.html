@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Not Configured</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; text-align: center; }
+        .error { color: #e74c3c; }
+        .solution { background: #f8f9fa; padding: 20px; margin: 20px; border-left: 4px solid #3498db; }
+    </style>
+</head>
+<body>
+    <h1 class="error">Backend Not Configured</h1>
+    <p>Your frontend is trying to make API calls, but no backend URL is configured.</p>
+    
+    <div class="solution">
+        <h3>Quick Fix:</h3>
+        <ol style="text-align: left; display: inline-block;">
+            <li>Deploy your backend to Railway, Render, or Vercel</li>
+            <li>Get your backend URL (e.g., https://your-app.up.railway.app)</li>
+            <li>In Netlify: Site Settings → Environment Variables</li>
+            <li>Add: <code>VITE_API_URL = https://your-backend-url.com</code></li>
+            <li>Redeploy your site</li>
+        </ol>
+    </div>
+    
+    <p><a href="/">← Back to App</a></p>
+</body>
+</html>
