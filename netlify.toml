@@ -12,13 +12,13 @@
   status = 200
 
 [[redirects]]
-  from = "/api/candidates"
+  from = "/api/candidates/bulk-import"
   to = "/.netlify/functions/candidates"
   status = 200
 
 [[redirects]]
-  from = "/api/candidates/*"
-  to = "/.netlify/functions/create-candidate"
+  from = "/api/candidates"
+  to = "/.netlify/functions/candidates"
   status = 200
 
 [[redirects]]

@@ -68,8 +68,123 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Only handle GET requests for listing all candidates
-    // POST requests for search and create are handled by separate functions
+    // POST /api/candidates - Create new candidate
+    if (method === 'POST' && path === '') {
+      // Check for duplicates
+      const existingByAadhar = await candidatesCollection.findOne({ aadhar: body.aadhar });
+      const existingByMobile = await candidatesCollection.findOne({ mobile: body.mobile });
+      
+      if (existingByAadhar) {
+        return {
+          statusCode: 409,
+          headers,
+          body: JSON.stringify({ error: 'Candidate with this Aadhar already exists' }),
+        };
+      }
+      
+      if (existingByMobile) {
+        return {
+          statusCode: 409,
+          headers,
+          body: JSON.stringify({ error: 'Candidate with this mobile number already exists' }),
+        };
+      }
+
+      // Generate ID
+      const count = await candidatesCollection.countDocuments();
+      const candidateId = `TRN${String(count + 1).padStart(3, '0')}`;
+      
+      const candidate = {
+        ...body,
+        id: count + 1,
+        candidateId,
+        createdAt: new Date(),
+        trained: false,
+        status: 'Not Enrolled'
+      };
+      
+      await candidatesCollection.insertOne(candidate);
+      
+      return {
+        statusCode: 201,
+        headers,
+        body: JSON.stringify(candidate),
+      };
+    }
+
+    // POST /api/candidates/bulk-import - Bulk import candidates
+    if (method === 'POST' && path === '/bulk-import') {
+      const { candidates } = body;
+      
+      if (!Array.isArray(candidates) || candidates.length === 0) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'No candidates data provided' }),
+        };
+      }
+
+      const results = [];
+      const errors = [];
+      const existingCount = await candidatesCollection.countDocuments();
+      let nextId = existingCount + 1;
+
+      for (const candidateData of candidates) {
+        try {
+          // Check duplicates
+          const existingByAadhar = await candidatesCollection.findOne({ aadhar: candidateData.aadhar });
+          const existingByMobile = await candidatesCollection.findOne({ mobile: candidateData.mobile });
+          
+          if (existingByAadhar || existingByMobile) {
+            errors.push({
+              name: candidateData.name,
+              aadhar: candidateData.aadhar,
+              error: 'Candidate already exists'
+            });
+            continue;
+          }
+
+          const candidateId = `TRN${String(nextId).padStart(3, '0')}`;
+          
+          const candidate = {
+            ...candidateData,
+            id: nextId,
+            candidateId,
+            createdAt: new Date(),
+            trained: false,
+            status: 'Not Enrolled'
+          };
+          
+          await candidatesCollection.insertOne(candidate);
+          
+          results.push({
+            name: candidate.name,
+            candidateId: candidate.candidateId,
+            status: 'success'
+          });
+          
+          nextId++;
+        } catch (error) {
+          errors.push({
+            name: candidateData.name || 'Unknown',
+            aadhar: candidateData.aadhar || 'Unknown',
+            error: error.message
+          });
+        }
+      }
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          imported: results.length,
+          errorCount: errors.length,
+          results,
+          errors
+        }),
+      };
+    }
 
     // PUT /api/candidates/:id - Update candidate
     if (method === 'PUT' && path.match(/^\/\d+$/)) {
