@@ -9,7 +9,7 @@ async function connectToDatabase() {
 
   const client = new MongoClient(process.env.MONGODB_URI);
   await client.connect();
-  cachedDb = client.db('training-portal');
+  cachedDb = client.db('training_portal');
   return cachedDb;
 }
 
