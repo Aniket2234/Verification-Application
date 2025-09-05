@@ -24,6 +24,11 @@ In your Netlify dashboard, add these environment variables:
 VITE_API_URL=https://your-backend-url.com
 ```
 
+**IMPORTANT**: Replace `https://your-backend-url.com` with your actual backend URL. Examples:
+- Railway: `https://your-app-name.up.railway.app`
+- Render: `https://your-app-name.onrender.com`
+- Vercel: `https://your-app-name.vercel.app`
+
 ### Step 3: Build Settings
 Use these settings in Netlify:
 - **Build command**: `npm run build:client` or `vite build`

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Shield, User, Eye, EyeOff, LogIn, Search, Download, Filter, Users, RefreshCw, Trash2, AlertTriangle, Camera, Edit, Calendar, Award, Upload, FileSpreadsheet } from 'lucide-react';
 import { apiRequest } from '../lib/queryClient';
+import { getApiUrl } from '../config/api';
 import type { Candidate } from '@shared/schema';
 import CandidateEditModal from '../components/CandidateEditModal';
 
@@ -26,9 +27,9 @@ const AdminPage = () => {
 
   // Fetch all candidates when logged in with auto-refresh
   const { data: candidates = [], isLoading, error: queryError, refetch } = useQuery<Candidate[]>({
-    queryKey: ['/api/candidates'],
+    queryKey: ['api/candidates'],
     queryFn: async () => {
-      return await apiRequest('/api/candidates');
+      return await apiRequest(getApiUrl('api/candidates'));
     },
     enabled: isLoggedIn,
     retry: false,
@@ -42,12 +43,12 @@ const AdminPage = () => {
   // Delete candidate mutation
   const deleteMutation = useMutation({
     mutationFn: async (candidateId: number) => {
-      return await apiRequest(`/api/candidates/${candidateId}`, {
+      return await apiRequest(getApiUrl(`api/candidates/${candidateId}`), {
         method: 'DELETE'
       });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['api/candidates'] });
       setDeleteConfirm(null);
     },
     onError: (error: any) => {
@@ -58,14 +59,14 @@ const AdminPage = () => {
   // Bulk import mutation
   const importMutation = useMutation({
     mutationFn: async (candidates: any[]) => {
-      return await apiRequest('/api/candidates/bulk-import', {
+      return await apiRequest(getApiUrl('api/candidates/bulk-import'), {
         method: 'POST',
         body: JSON.stringify({ candidates })
       });
     },
     onSuccess: (data) => {
       setImportResults(data);
-      queryClient.invalidateQueries({ queryKey: ['/api/candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['api/candidates'] });
       setImporting(false);
     },
     onError: (error: any) => {
@@ -77,7 +78,7 @@ const AdminPage = () => {
   // Search mutation for individual candidates
   const searchMutation = useMutation({
     mutationFn: async ({ aadhar, mobile }: { aadhar?: string; mobile?: string }) => {
-      return await apiRequest('/api/candidates/search', {
+      return await apiRequest(getApiUrl('api/candidates/search'), {
         method: 'POST',
         body: JSON.stringify({ aadhar, mobile })
       });

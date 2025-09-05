@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { UserPlus, CheckCircle, AlertCircle, Camera, Upload, User, ArrowLeft } from 'lucide-react';
 import { useCandidateContext } from '../context/CandidateContext';
 import { apiRequest, queryClient } from '../lib/queryClient';
+import { getApiUrl } from '../config/api';
 import ImageCropper from '../components/ImageCropper';
 import { DynamicSelectInput } from '../components/DynamicSelectInput';
 
@@ -223,14 +224,14 @@ const RegistrationPage = () => {
 
   const createCandidateMutation = useMutation({
     mutationFn: async (candidateData: any) => {
-      return await apiRequest('/api/candidates', {
+      return await apiRequest(getApiUrl('api/candidates'), {
         method: 'POST',
         body: JSON.stringify(candidateData)
       });
     },
     onSuccess: (data) => {
       setCandidateId(data.candidateId);
-      queryClient.invalidateQueries({ queryKey: ['/api/candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['api/candidates'] });
       setLoading(false);
     },
     onError: (error: any) => {

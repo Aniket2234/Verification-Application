@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { X, Save, Calendar, User, Phone, Award, CheckCircle, Clock, Camera, Upload } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest, queryClient } from '../lib/queryClient';
+import { getApiUrl } from '../config/api';
 import ImageCropper from './ImageCropper';
 import type { Candidate } from '../../../shared/schema';
 
@@ -172,7 +173,7 @@ const CandidateEditModal = ({ candidate, isOpen, onClose }: CandidateEditModalPr
     setError('');
     
     try {
-      const response = await apiRequest(`/api/candidates/${candidate.id}`, {
+      const response = await apiRequest(getApiUrl(`api/candidates/${candidate.id}`), {
         method: 'PUT',
         body: JSON.stringify(formData)
       });
@@ -180,7 +181,7 @@ const CandidateEditModal = ({ candidate, isOpen, onClose }: CandidateEditModalPr
       // Show "Saved!" immediately
       setIsSaving(false);
       setShowSaved(true);
-      queryClient.invalidateQueries({ queryKey: ['/api/candidates'] });
+      queryClient.invalidateQueries({ queryKey: ['api/candidates'] });
       
       // Close modal after showing "Saved!" for 2 seconds
       setTimeout(() => {

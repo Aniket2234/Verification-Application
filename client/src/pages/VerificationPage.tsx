@@ -7,6 +7,7 @@ import { smsService } from '../services/smsService';
 import { otpService } from '../services/otpService';
 import { ocrService } from '../services/ocrService';
 import { apiRequest } from '../lib/queryClient';
+import { getApiUrl } from '../config/api';
 import type { AadharData } from '../services/ocrService';
 
 const VerificationPage = () => {
@@ -31,7 +32,7 @@ const VerificationPage = () => {
   const checkDuplicateMutation = useMutation({
     mutationFn: async ({ aadhar, mobile }: { aadhar: string; mobile: string }) => {
       try {
-        const response = await apiRequest('/api/candidates/search', {
+        const response = await apiRequest(getApiUrl('api/candidates/search'), {
           method: 'POST',
           body: JSON.stringify({ aadhar })
         });
@@ -62,7 +63,7 @@ const VerificationPage = () => {
   // Use server-side OTP sending
   const sendOtpMutation = useMutation({
     mutationFn: async (phoneNumber: string) => {
-      return await apiRequest('/api/send-otp', {
+      return await apiRequest(getApiUrl('api/send-otp'), {
         method: 'POST',
         body: JSON.stringify({ phoneNumber })
       });
@@ -100,7 +101,7 @@ const VerificationPage = () => {
   // Use server-side OTP verification
   const verifyOtpMutation = useMutation({
     mutationFn: async ({ phoneNumber, otp }: { phoneNumber: string; otp: string }) => {
-      return await apiRequest('/api/verify-otp', {
+      return await apiRequest(getApiUrl('api/verify-otp'), {
         method: 'POST',
         body: JSON.stringify({ phoneNumber, otp })
       });
@@ -133,7 +134,7 @@ const VerificationPage = () => {
       let existingCandidate = null;
       
       try {
-        existingCandidate = await apiRequest('/api/candidates/search', {
+        existingCandidate = await apiRequest(getApiUrl('api/candidates/search'), {
           method: 'POST',
           body: JSON.stringify({ mobile })
         });
