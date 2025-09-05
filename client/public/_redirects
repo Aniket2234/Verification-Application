@@ -1,6 +1,7 @@
-# API calls should be handled by your backend (set VITE_API_URL environment variable)
-# If no VITE_API_URL is set, these will return 404
-/api/*  /404.html  404
+# Netlify Functions redirects
+/api/candidates/*  /.netlify/functions/candidates/:splat  200
+/api/send-otp      /.netlify/functions/send-otp          200  
+/api/verify-otp    /.netlify/functions/verify-otp        200
 
 # SPA fallback for client-side routing
 /*  /index.html  200
